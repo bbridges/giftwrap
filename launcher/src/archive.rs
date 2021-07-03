@@ -13,14 +13,14 @@ use serde::Deserialize;
 use serde_json;
 use tar;
 
-/// Giftwrap archive appending to the launcher program.
+/// Giftwrap archive appended to a launcher program.
 ///
 /// The layout of the has archive has four sections:
 ///
 /// - `content`: a tar file containing the program to execute and all of its
 ///   dependencies (optionally compressed).
-/// - `config`: a MessagePack entry containing for configuration on how to boot
-///   into to the content's program.
+/// - `config`: a JSON entry containing for configuration on how to boot into
+///   to the content's program.
 /// - `tag`: the name of the archive, typically a hash of the launcher, content,
 ///   and config, or version string.
 /// - `trailer`: a binary trailer indiciating the Giftwrap magic and trailer
@@ -49,7 +49,7 @@ pub struct Archive<'a> {
 impl<'a> Archive<'a> {
     pub fn from_file(file: &'a File) -> Result<Self> {
         let mut file = file;
-        let mut offset = -(TRAILER_LENGTH as i64) - 1;
+        let mut offset = -(TRAILER_LENGTH as i64);
 
         let trailer = Self::read_trailer(&mut file, offset)?;
 
@@ -123,7 +123,7 @@ impl<'a> Archive<'a> {
             Error::UnpackError(msg)
         })?;
 
-        File::create(".giftwrapped").map_err(|e| {
+        File::create(completion_path).map_err(|e| {
             let msg = format!("failed to write completion file: {}", e);
             Error::UnpackError(msg)
         })?;
@@ -225,7 +225,7 @@ impl Trailer {
 #[derive(Deserialize)]
 struct Config {
     pub compression: Option<Compression>,
-    #[serde(default = "default_cache_dir")]
+    #[serde(default = "cache::default_cache_dir")]
     pub cache_dir: String,
     pub entry_point: String,
 }
@@ -233,12 +233,14 @@ struct Config {
 impl Config {
     pub fn from_reader<R: Read>(reader: R) -> Result<Self> {
         match serde_json::from_reader::<R, Self>(reader) {
-            Ok(config) => {
+            Ok(mut config) => {
                 if config.entry_point.is_empty() {
-                    Err(Error::InvalidConfig("entry_point is required".to_string()))
-                } else {
-                    Ok(config)
+                    return Err(Error::InvalidConfig("entry_point is required".to_string()));
                 }
+
+                config.cache_dir = cache::expand_cache_dir(&config.cache_dir)?;
+
+                Ok(config)
             }
             Err(error) => {
                 let msg = format!("{}", error);
@@ -253,17 +255,54 @@ enum Compression {
     Zstd,
 }
 
-#[cfg(all(unix, not(target_os = "macos")))]
-fn default_cache_dir() -> String {
-    "~/.cache/giftwrap".to_string()
-}
+mod cache {
+    extern crate dirs_next as dirs;
 
-#[cfg(target_os = "macos")]
-fn default_cache_dir() -> String {
-    "~/Library/Caches/Giftwrap".to_string()
-}
+    use std::path::PathBuf;
 
-#[cfg(windows)]
-fn default_cache_dir() -> String {
-    "%APPDATA%\\Local\\Giftwrap\\cache".to_string()
+    use shellexpand;
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    pub fn default_cache_dir() -> String {
+        "~/.cache/giftwrap".to_string()
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn default_cache_dir() -> String {
+        "~/Library/Caches/Giftwrap".to_string()
+    }
+
+    #[cfg(windows)]
+    pub fn default_cache_dir() -> String {
+        "$APPDATA\\Local\\Giftwrap\\cache".to_string()
+    }
+
+    #[cfg(unix)]
+    pub fn expand_cache_dir(cache_dir: &String) -> super::Result<String> {
+        Ok(shellexpand::tilde_with_context(cache_dir, home_dir).to_string())
+    }
+
+    #[cfg(windows)]
+    pub fn expand_cache_dir(cache_dir: &String) -> super::Result<String> {
+        shellexpand::full_with_context(cache_dir, home_dir, appdata_env)
+            .map(|dir| dir.to_string())
+            .map_err(|error| error.cause)
+    }
+
+    fn home_dir() -> Option<PathBuf> {
+        dirs::home_dir()
+    }
+
+    #[cfg(windows)]
+    fn appdata_env(name: &str) -> super::Result<Option<String>> {
+        match name {
+            "APPDATA" => std::env::var("APPDATA")
+                .map(|s| Some(s))
+                .map_err(|_| super::Error::InvalidConfig("unable to expand APPDATA".to_string())),
+            _ => Err(super::Error::InvalidConfig(format!(
+                "unsupported env var {} in cache dir",
+                name
+            ))),
+        }
+    }
 }
