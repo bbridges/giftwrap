@@ -131,26 +131,29 @@ impl<'a> Archive<'a> {
         Ok(())
     }
 
-    pub fn launch<T>(&mut self, args: T) -> !
-    where
-        T: Iterator<Item = String>,
-    {
+    pub fn launch(&mut self, args: &[String]) -> ! {
         let path_buf = self.dest.join(self.config.entry_point.as_str());
         let path_string = path_buf.into_os_string().into_string().unwrap();
         let path = CString::new(path_string).unwrap();
 
-        let args_c_strings = args.map(|s| CString::new(s).unwrap());
-
-        let args_ptrs: Vec<*const libc::c_char> = args_c_strings
-            .map(|s| s.as_ptr())
-            .chain(iter::once(ptr::null()))
+        let args_c_strings: Vec<CString> = args
+            .iter()
+            .map(|s| CString::new(s.as_str()).unwrap())
             .collect();
+        let args_ptrs = Self::exec_array(&path, &args_c_strings);
 
         unsafe {
             libc::execv(path.as_ptr(), args_ptrs.as_ptr());
         }
 
         panic!("execv: {}", errno::errno());
+    }
+
+    fn exec_array(path: &CString, args: &[CString]) -> Vec<*const libc::c_char> {
+        iter::once(path.as_ptr())
+            .chain(args.iter().map(|s| s.as_ptr()))
+            .chain(iter::once(ptr::null()))
+            .collect()
     }
 }
 

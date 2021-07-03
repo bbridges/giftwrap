@@ -31,7 +31,7 @@ fn main() {
 
     match extract(&file) {
         Ok(mut archive) => {
-            archive.launch(env::args());
+            archive.launch(&env::args().collect::<Vec<_>>());
         }
         Err(error) => {
             eprintln!("Error occurred while launching program: {}", error);
