@@ -21,8 +21,8 @@ use tar;
 ///   dependencies (optionally compressed).
 /// - `config`: a JSON entry containing for configuration on how to boot into
 ///   to the content's program.
-/// - `tag`: the name of the archive, typically a hash of the launcher, content,
-///   and config, or version string.
+/// - `tag`: the tag for the archive, typically a hash of the launcher, content,
+///   and config.
 /// - `trailer`: a binary trailer indiciating the Giftwrap magic and trailer
 ///   version and the config and content lengths.
 ///
@@ -41,6 +41,7 @@ use tar;
 pub struct Archive<'a> {
     file: &'a File,
     config: Config,
+    tag: String,
     dest: PathBuf,
     content_start: i64,
     content_length: u64,
@@ -63,11 +64,18 @@ impl<'a> Archive<'a> {
 
         offset -= trailer.content_length as i64;
 
-        let dest = Path::new(&config.cache_dir).join(tag.as_str());
+        let version = if let Some(v) = &config.version {
+            v.as_str()
+        } else {
+            tag.as_str()
+        };
+
+        let dest = Path::new(&config.cache_dir).join(version);
 
         let archive = Self {
             file,
             config,
+            tag,
             dest,
             content_start: offset,
             content_length: trailer.content_length,
@@ -102,10 +110,21 @@ impl<'a> Archive<'a> {
     }
 
     pub fn unpack_content(&mut self) -> Result<()> {
-        let completion_path = self.dest.as_path().join(".giftwrapped");
+        let completion_path = self.dest.as_path().join(".tag");
 
         if completion_path.is_file() {
             return Ok(());
+        }
+
+        if let Ok(mut f) = File::open(&completion_path) {
+            let mut existing = String::new();
+
+            f.read_to_string(&mut existing)
+                .map_err(|e| Error::UnpackError(format!("failed to read tag file: {}", e)))?;
+
+            if existing != self.tag {
+                return Err(Error::UnpackError("found conflicting tag in tag file".to_string()));
+            }
         }
 
         Self::seek(&mut self.file, self.content_start);
@@ -123,10 +142,10 @@ impl<'a> Archive<'a> {
             Error::UnpackError(msg)
         })?;
 
-        File::create(completion_path).map_err(|e| {
-            let msg = format!("failed to write completion file: {}", e);
-            Error::UnpackError(msg)
-        })?;
+        File::create(&completion_path)
+            .map_err(|e| Error::UnpackError(format!("failed to create tag file: {}", e)))?
+            .write_all(self.tag.as_bytes())
+            .map_err(|e| Error::UnpackError(format!("failed to write to tag file: {}", e)))?;
 
         Ok(())
     }
@@ -227,6 +246,7 @@ impl Trailer {
 
 #[derive(Deserialize)]
 struct Config {
+    pub version: Option<String>,
     pub compression: Option<Compression>,
     #[serde(default = "cache::default_cache_dir")]
     pub cache_dir: String,
