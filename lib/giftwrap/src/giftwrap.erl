@@ -1,6 +1,6 @@
 -module(giftwrap).
 
--export([create_exe/3]).
+-export([create_exe/3, format_error/1]).
 
 %% -----------------------------------------------------------------------------
 %% Public API
@@ -23,7 +23,11 @@ create_exe(Filename, EscriptFilename, LauncherFilename) ->
         end;
       {error, Reason} ->
         {error, Reason}
-      end
+    end
   after
     file:delete(ContentFilename)
   end.
+
+-spec format_error(term()) -> string().
+format_error(Reason) ->
+  gw_error:format(Reason).

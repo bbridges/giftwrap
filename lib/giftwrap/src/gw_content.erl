@@ -48,9 +48,9 @@ lib_folder(ErlFolder) ->
 
 erts_folder(ErlFolder) ->
   case filelib:wildcard(filename:join(ErlFolder, "erts-*")) of
-    []           -> throw({tar_error, {no_erts_folder, ErlFolder}});
+    []           -> throw({tar_error, no_erts_folder});
     [ErtsFolder] -> ErtsFolder;
-    _            -> throw({tar_error, {ambig_erts_folder, ErlFolder}})
+    _            -> throw({tar_error, ambig_erts_folder})
   end.
 
 open_tar(Filename, Options) ->
