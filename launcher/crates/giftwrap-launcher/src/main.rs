@@ -3,9 +3,7 @@ use std::fs::File;
 use std::panic;
 use std::process;
 
-mod archive;
-
-use archive::{Archive, Result};
+use giftwrap_archive::{Archive, Result};
 
 fn extract<'a>(file: &'a File) -> Result<Archive<'a>> {
     let mut archive = Archive::from_file(&file)?;

@@ -1,0 +1,12 @@
+[package]
+name = "giftwrap-launcher"
+version = "0.1.0"
+authors = ["Bradley Bridges <bradley@bbridges.io>"]
+edition = "2018"
+
+[[bin]]
+name = "launcher"
+path = "src/main.rs"
+
+[dependencies]
+giftwrap-archive = { path = "../giftwrap-archive", version = "0.1.0" }
