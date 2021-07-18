@@ -9,6 +9,38 @@
 -spec create_exe(file:filename_all(), file:filename_all(), file:filename_all()) ->
         ok | {error, term()}.
 create_exe(Filename, EscriptFilename, LauncherFilename) ->
+  case do_setup(Filename, EscriptFilename, LauncherFilename) of
+    ok              -> do_create(Filename, EscriptFilename, LauncherFilename);
+    {error, Reason} -> {error, Reason}
+  end.
+
+-spec format_error(term()) -> string().
+format_error(Reason) ->
+  gw_error:format(Reason).
+
+%% -----------------------------------------------------------------------------
+%% Helper Functions
+%% -----------------------------------------------------------------------------
+
+do_setup(Filename, EscriptFilename, LauncherFilename) ->
+  case filelib:is_regular(EscriptFilename) of
+    true ->
+      case filelib:is_regular(LauncherFilename) of
+        true ->
+          case filelib:ensure_dir(Filename) of
+            ok ->
+              ok;
+            {error, Reason} ->
+              {error, {ensure_dir_error, Reason}}
+          end;
+        false ->
+          {error, invalid_launcher}
+      end;
+    false ->
+      {error, invalid_escript}
+  end.
+
+do_create(Filename, EscriptFilename, LauncherFilename) ->
   ContentName = binary_to_list(gw_util:bytes_to_hex(crypto:strong_rand_bytes(16))) ++ ".content",
   ContentFilename = filename:join(gw_util:tmpdir(), ContentName),
 
@@ -27,7 +59,3 @@ create_exe(Filename, EscriptFilename, LauncherFilename) ->
   after
     file:delete(ContentFilename)
   end.
-
--spec format_error(term()) -> string().
-format_error(Reason) ->
-  gw_error:format(Reason).

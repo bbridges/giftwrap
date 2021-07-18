@@ -2,6 +2,8 @@
 
 -export([create/4]).
 
+-include_lib("kernel/include/file.hrl").
+
 %% -----------------------------------------------------------------------------
 %% Public API
 %% -----------------------------------------------------------------------------
@@ -25,6 +27,8 @@ create(Filename, LauncherFilename, ContentFilename, Config) ->
     close_file(File),
     close_file(LauncherFile),
     close_file(ContentFile),
+
+    chmod_x_file(Filename),
 
     ok
   catch
@@ -110,4 +114,17 @@ write_file(File, Bytes) ->
   case file:write(File, Bytes) of
     ok              -> ok;
     {error, Reason} -> throw({exe_error, {write_error, Reason}})
+  end.
+
+chmod_x_file(Filename) ->
+  case file:read_file_info(Filename) of
+    {ok, Info} ->
+      case file:change_mode(Filename, Info#file_info.mode bor 8#111) of
+        ok ->
+          ok;
+        {error, Reason} ->
+          throw({exe_error, {chmod_x_error, Reason}})
+      end;
+    {error, Reason} ->
+      throw({exe_error, {chmod_x_error, Reason}})
   end.

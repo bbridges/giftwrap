@@ -26,7 +26,7 @@ create(ContentFilename, EscriptFilename, Options) ->
     WrappedEscript = EntryPoint ++ ".escript",
 
     add_tar(TarDesc, {EntryPoint, filename:join([ErtsFolder, "bin", "escript"])}),
-    add_tar(TarDesc, {WrappedEscript, EscriptFilename}),
+    add_tar(TarDesc, {WrappedEscript, filename_to_string(EscriptFilename)}),
 
     close_tar(TarDesc),
 
@@ -52,6 +52,11 @@ erts_folder(ErlFolder) ->
     [ErtsFolder] -> ErtsFolder;
     _            -> throw({tar_error, ambig_erts_folder})
   end.
+
+filename_to_string(Filename) when is_list(Filename) ->
+  Filename;
+filename_to_string(Filename) when is_binary(Filename) ->
+  binary_to_list(Filename).
 
 open_tar(Filename, Options) ->
   case erl_tar:open(Filename, Options) of
