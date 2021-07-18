@@ -1,4 +1,3 @@
-use std;
 use std::convert::TryInto;
 use std::ffi::CString;
 use std::fmt::{self, Display};
@@ -10,8 +9,6 @@ use std::path::{Path, PathBuf};
 use std::ptr;
 
 use serde::Deserialize;
-use serde_json;
-use tar;
 
 /// Giftwrap archive appended to a launcher program.
 ///
@@ -283,8 +280,6 @@ mod cache {
 
     use std::path::PathBuf;
 
-    use shellexpand;
-
     #[cfg(all(unix, not(target_os = "macos")))]
     pub fn default_cache_dir() -> String {
         "~/.cache/giftwrap".to_string()
@@ -301,12 +296,12 @@ mod cache {
     }
 
     #[cfg(unix)]
-    pub fn expand_cache_dir(cache_dir: &String) -> super::Result<String> {
+    pub fn expand_cache_dir(cache_dir: &str) -> super::Result<String> {
         Ok(shellexpand::tilde_with_context(cache_dir, home_dir).to_string())
     }
 
     #[cfg(windows)]
-    pub fn expand_cache_dir(cache_dir: &String) -> super::Result<String> {
+    pub fn expand_cache_dir(cache_dir: &str) -> super::Result<String> {
         shellexpand::full_with_context(cache_dir, home_dir, appdata_env)
             .map(|dir| dir.to_string())
             .map_err(|error| error.cause)

@@ -5,7 +5,7 @@ use std::process;
 
 use giftwrap_archive::{Archive, Result};
 
-fn extract<'a>(file: &'a File) -> Result<Archive<'a>> {
+fn extract(file: &File) -> Result<Archive<'_>> {
     let mut archive = Archive::from_file(&file)?;
     archive.unpack_content()?;
 
