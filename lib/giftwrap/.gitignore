@@ -1,12 +1,11 @@
-# Erlang defaults.
+# Elixir defaults.
 /_build
-/ebin
 /cover
 /deps
 /doc
-/_checkouts
+/.fetch
 erl_crash.dump
-*.o
-*.beam
-*.plt
-.rebar3
+*.ez
+
+# Package tarball.
+giftwrap-*.tar
