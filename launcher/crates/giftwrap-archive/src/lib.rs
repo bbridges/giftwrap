@@ -243,9 +243,10 @@ impl Trailer {
 
 #[derive(Deserialize)]
 struct Config {
+    pub app: Option<String>,
     pub version: Option<String>,
     pub compression: Option<Compression>,
-    #[serde(default = "cache::default_cache_dir")]
+    #[serde(default)]
     pub cache_dir: String,
     pub entry_point: String,
 }
@@ -254,8 +255,26 @@ impl Config {
     pub fn from_reader<R: Read>(reader: R) -> Result<Self> {
         match serde_json::from_reader::<R, Self>(reader) {
             Ok(mut config) => {
-                if config.entry_point.is_empty() {
-                    return Err(Error::InvalidConfig("entry_point is required".to_string()));
+                if let Some(app) = &config.app {
+                    if app.eq_ignore_ascii_case(cache::SHARED) {
+                        return Err(Error::InvalidConfig(
+                            "invalid config: invalid app name".to_string()));
+                    }
+                }
+
+                if config.cache_dir.is_empty() {
+                    let app = if let Some(app) = &config.app {
+                        app.as_str()
+                    } else {
+                        cache::SHARED
+                    };
+
+                    config.cache_dir = cache::default_cache_dir(app);
+                }
+
+                if config.version.is_some() && config.app.is_none() {
+                    return Err(Error::InvalidConfig(
+                        "invalid config: app must be provided if version is provided".to_string()));
                 }
 
                 config.cache_dir = cache::expand_cache_dir(&config.cache_dir)?;
@@ -263,7 +282,7 @@ impl Config {
                 Ok(config)
             }
             Err(error) => {
-                let msg = format!("{}", error);
+                let msg = format!("invalid config: {}", error);
                 Err(Error::InvalidConfig(msg))
             }
         }
@@ -280,19 +299,21 @@ mod cache {
 
     use std::path::PathBuf;
 
+    pub const SHARED: &str = "shared";
+
     #[cfg(all(unix, not(target_os = "macos")))]
-    pub fn default_cache_dir() -> String {
-        "~/.cache/giftwrap".to_string()
+    pub fn default_cache_dir(app_name: &str) -> String {
+        format!("~/.cache/giftwrap/{}", app_name)
     }
 
     #[cfg(target_os = "macos")]
-    pub fn default_cache_dir() -> String {
-        "~/Library/Caches/Giftwrap".to_string()
+    pub fn default_cache_dir(app_name: &str) -> String {
+        format!("~/Library/Caches/Giftwrap/{}", app_name)
     }
 
     #[cfg(windows)]
-    pub fn default_cache_dir() -> String {
-        "$APPDATA\\Local\\Giftwrap\\cache".to_string()
+    pub fn default_cache_dir(app_name: &str) -> String {
+        format!("$APPDATA\\Local\\Giftwrap\\cache\\{}", app_name)
     }
 
     #[cfg(unix)]

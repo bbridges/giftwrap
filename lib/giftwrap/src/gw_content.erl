@@ -6,9 +6,7 @@
 %% Public API
 %% -----------------------------------------------------------------------------
 
--type create_opt() :: {erl_folder, file:filename_all()}.
-
--spec create(file:filename_all(), file:filename_all(), [create_opt()]) ->
+-spec create(file:filename_all(), file:filename_all(), list()) ->
         {ok, map()} | {error, term()}.
 create(ContentFilename, EscriptFilename, Options) ->
   try
@@ -31,6 +29,8 @@ create(ContentFilename, EscriptFilename, Options) ->
     close_tar(TarDesc),
 
     Config = #{
+      <<"app">> => maybe_atom_to_binary(proplists:get_value(app, Options, null)),
+      <<"version">> => maybe_iolist_to_binary(proplists:get_value(version, Options, null)),
       <<"compression">> => null,
       <<"entry_point">> => iolist_to_binary(EntryPoint)
     },
@@ -75,3 +75,13 @@ add_tar(TarDesc, {Name, Path}) ->
     ok              -> ok;
     {error, Reason} -> throw({tar_error, {add_tar_error, Reason}})
   end.
+
+maybe_iolist_to_binary(null) ->
+  null;
+maybe_iolist_to_binary(IOList) ->
+  iolist_to_binary(IOList).
+
+maybe_atom_to_binary(null) ->
+  null;
+maybe_atom_to_binary(Atom) ->
+  atom_to_binary(Atom).
