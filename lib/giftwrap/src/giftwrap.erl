@@ -1,24 +1,25 @@
 -module(giftwrap).
 
--export([create_exe/3, create_exe/4, format_error/1]).
--export_type([exe_opt/0]).
+-export([wrap_escript/3, wrap_escript/4, format_error/1]).
+-export_type([escript_opt/0]).
 
 %% -----------------------------------------------------------------------------
 %% Public API
 %% -----------------------------------------------------------------------------
 
--type exe_opt() :: {app, atom()}
-                 | {version, string()}
-                 | {erl_folder, file:filename_all()}.
+-type escript_opt() :: {app, atom()}
+                     | {version, string()}
+                     | {erl_folder, file:filename_all()}.
 
--spec create_exe(file:filename_all(), file:filename_all(), file:filename_all()) ->
+-spec wrap_escript(file:filename_all(), file:filename_all(), file:filename_all()) ->
         ok | {error, term()}.
-create_exe(Filename, EscriptFilename, LauncherFilename) ->
-  create_exe(Filename, EscriptFilename, LauncherFilename, []).
+wrap_escript(Filename, EscriptFilename, LauncherFilename) ->
+  wrap_escript(Filename, EscriptFilename, LauncherFilename, []).
 
--spec create_exe(file:filename_all(), file:filename_all(), file:filename_all(), [exe_opt()]) ->
+-spec wrap_escript(file:filename_all(), file:filename_all(), file:filename_all(),
+                   [escript_opt()]) ->
         ok | {error, term()}.
-create_exe(Filename, EscriptFilename, LauncherFilename, Options) ->
+wrap_escript(Filename, EscriptFilename, LauncherFilename, Options) ->
   case do_setup(Filename, EscriptFilename, LauncherFilename) of
     ok              -> do_create(Filename, EscriptFilename, LauncherFilename, Options);
     {error, Reason} -> {error, Reason}
