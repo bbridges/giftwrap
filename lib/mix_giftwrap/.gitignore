@@ -1,0 +1,11 @@
+# Elixir defaults.
+/_build
+/cover
+/deps
+/doc
+/.fetch
+erl_crash.dump
+*.ez
+
+# Package tarball.
+mix_giftwrap-*.tar
