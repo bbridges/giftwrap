@@ -84,7 +84,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "giftwrap-archive"
+name = "giftwrap_archive"
 version = "0.1.0"
 dependencies = [
  "dirs-next",
@@ -97,10 +97,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "giftwrap-launcher"
+name = "giftwrap_launcher"
 version = "0.1.0"
 dependencies = [
- "giftwrap-archive",
+ "giftwrap_archive",
 ]
 
 [[package]]

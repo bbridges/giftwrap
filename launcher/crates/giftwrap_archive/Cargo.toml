@@ -1,5 +1,5 @@
 [package]
-name = "giftwrap-archive"
+name = "giftwrap_archive"
 version = "0.1.0"
 authors = ["Bradley Bridges <bradley@bbridges.io>"]
 edition = "2018"

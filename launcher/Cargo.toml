@@ -1,5 +1,5 @@
 [workspace]
 members = [
-  "crates/giftwrap-archive",
-  "crates/giftwrap-launcher",
+  "crates/giftwrap_archive",
+  "crates/giftwrap_launcher",
 ]
