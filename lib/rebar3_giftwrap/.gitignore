@@ -1,0 +1,12 @@
+# Erlang defaults.
+/_build
+/ebin
+/cover
+/deps
+/doc
+/_checkouts
+erl_crash.dump
+*.o
+*.beam
+*.plt
+.rebar3

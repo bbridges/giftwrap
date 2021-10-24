@@ -1,0 +1,10 @@
+{application, rebar3_giftwrap, [
+  {description,  "Giftwrap rebar3 plugin"},
+  {vsn,          "0.1.0"},
+  {registered,   []},
+  {modules,      []},
+  {applications, [kernel, stdlib, giftwrap]},
+  {env,          []},
+  {licenses,     ["MIT"]},
+  {links,        [{"GitHub", "https://github.com/bbridges/giftwrap"}]}
+]}.
