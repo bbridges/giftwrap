@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_lib:
+    name: Build Libraries
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Erlang and Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '24'
+          elixir-version: '1.12'
+
+      - name: Build lib/giftwrap
+        run: rebar3 build
+        working-directory: lib/giftwrap
+
+      - name: Build lib/rebar3_giftwrap
+        run: rebar3 build
+        working-directory: lib/rebar3_giftwrap
+
+      - name: Build lib/mix_giftwrap
+        run: |
+          mix deps.get
+          mix compile
+        working-directory: lib/mix_giftwrap
+      - name: Test lib/mix_giftwrap
+        run: mix test
+        working-directory: lib/mix_giftwrap
+
+      - name: Check lib/mix_giftwrap code formatting
+        run: mix format --check-formatted
+        working-directory: lib/mix_giftwrap
+
+  build_launcher:
+    name: Build Launcher
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: launcher
+
+    steps:
+      - name: Install stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Build launcher
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-features
+
+      - name: Check launcher code formatting   
+        uses: actions-rs/cargo@v1
+        with:
+          command: format
+          args: --all -- --check
+      - name: Annotate commit with clippy warnings
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
