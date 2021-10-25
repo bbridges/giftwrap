@@ -120,7 +120,9 @@ impl<'a> Archive<'a> {
                 .map_err(|e| Error::UnpackError(format!("failed to read tag file: {}", e)))?;
 
             if existing != self.tag {
-                return Err(Error::UnpackError("found conflicting tag in tag file".to_string()));
+                return Err(Error::UnpackError(
+                    "found conflicting tag in tag file".to_string(),
+                ));
             }
         }
 
@@ -258,7 +260,8 @@ impl Config {
                 if let Some(app) = &config.app {
                     if app.eq_ignore_ascii_case(cache::SHARED) {
                         return Err(Error::InvalidConfig(
-                            "invalid config: invalid app name".to_string()));
+                            "invalid config: invalid app name".to_string(),
+                        ));
                     }
                 }
 
@@ -274,7 +277,8 @@ impl Config {
 
                 if config.version.is_some() && config.app.is_none() {
                     return Err(Error::InvalidConfig(
-                        "invalid config: app must be provided if version is provided".to_string()));
+                        "invalid config: app must be provided if version is provided".to_string(),
+                    ));
                 }
 
                 config.cache_dir = cache::expand_cache_dir(&config.cache_dir)?;
