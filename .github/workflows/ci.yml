@@ -46,9 +46,6 @@ jobs:
   build_launcher:
     name: Build Launcher
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: launcher
 
     steps:
       - name: Install stable Rust toolchain
@@ -60,8 +57,11 @@ jobs:
 
       - name: Build launcher
         run: cargo build --all-features
+        working-directory: launcher
 
       - name: Check launcher code formatting   
         run: cargo format --all -- --check
+        working-directory: launcher
       - name: Check launcher clippy warnings
         run: cargo clippy --all-features -- -D warnings
+        working-directory: launcher
