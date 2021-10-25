@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Giftwrap.Get do
   ]
 
   @moduledoc """
-  Fetches and builds Giftwrap launcher.
+  Fetches and builds a Giftwrap launcher.
 
       mix giftwrap.get
 

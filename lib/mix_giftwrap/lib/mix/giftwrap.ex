@@ -1,8 +1,6 @@
 defmodule Mix.Giftwrap do
   @moduledoc false
 
-  @compile_env Mix.env()
-
   alias Mix.Giftwrap.Util
 
   def escript_path(config) do
@@ -35,27 +33,10 @@ defmodule Mix.Giftwrap do
   def launcher(config) do
     case get_in(config, [:giftwrap, :launcher]) do
       nil ->
-        default_launcher()
+        Application.fetch_env!(:mix_giftwrap, :launcher)
 
       launcher ->
         launcher
-    end
-  end
-
-  defp default_launcher do
-    case @compile_env do
-      :prod ->
-        Application.ensure_all_started(:giftwrap)
-        version = Application.spec(:giftwrap, :vsn)
-
-        {:crates_io, "giftwrap_launcher", version}
-
-      _ ->
-        path =
-          Path.join(__ENV__.file, "../../../../../launcher/crates/giftwrap_launcher")
-          |> Path.expand()
-
-        {:path, path}
     end
   end
 end
