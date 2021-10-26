@@ -66,3 +66,4 @@ jobs:
       - name: Check launcher clippy warnings
         run: cargo clippy --all-features -- -D warnings
         working-directory: launcher
+        continue-on-error: true
